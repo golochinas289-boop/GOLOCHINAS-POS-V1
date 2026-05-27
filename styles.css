@@ -1,0 +1,83 @@
+body { 
+    background-color: #f1f5f9; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+}
+th { 
+    white-space: nowrap; 
+    font-size: 11px; 
+    border: 1px solid #cbd5e1; 
+    color: white; 
+    background-color: #1e40af; 
+    padding: 8px; 
+    text-transform: uppercase; 
+    font-weight: 900; 
+}
+td { 
+    border: 1px solid #e2e8f0; 
+    font-size: 12px; 
+    padding: 6px; 
+    vertical-align: middle; 
+    font-weight: 600; 
+}
+.label-form { 
+    color: #1e3a8a !important; 
+    font-weight: 800 !important; 
+    font-size: 10px; 
+    margin-bottom: 2px; 
+    display: block; 
+    text-transform: uppercase; 
+}
+input[type="text"], input[type="number"], select { 
+    border: 1.5px solid #94a3b8 !important; 
+    padding: 6px !important; 
+    border-radius: 4px !important; 
+    font-size: 12px; 
+    font-weight: bold; 
+    width: 100%; 
+    background-color: white; 
+}
+
+#cuerpo-tabla tr:nth-child(even) { background-color: #f8fafc; }
+#cuerpo-tabla tr:hover { background-color: #eff6ff; cursor: pointer; }
+
+.price-box { display: inline-block; padding: 2px 5px; border-radius: 4px; font-size: 10px; margin: 1px; font-weight: 900; }
+.box-detal { background-color: #e2e8f0; color: #1e3a8a; }
+.box-mayor { background-color: #fef3c7; color: #d97706; }
+
+.margen-alerta { background-color: #fee2e2; color: #b91c1c; padding: 2px 6px; border-radius: 4px; font-weight: 900; }
+.margen-excelente { background-color: #dcfce7; color: #15803d; padding: 2px 6px; border-radius: 4px; font-weight: 900; }
+
+#area-impresion { display: none; }
+
+/* Controladores del Sistema de Impresión Física */
+@media print {
+    body { background: white !important; margin: 0 !important; padding: 0 !important; }
+    #app-principal, .no-print { display: none !important; } 
+    #area-impresion { display: block !important; visibility: visible !important; position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; }
+    #area-impresion * { visibility: visible !important; color: #000 !important; }
+}
+
+body.imprimiendo-etiqueta #area-impresion { max-width: 76mm !important; margin: 0 auto !important; }
+
+@media print {
+    body.imprimiendo-etiqueta { @page { margin: 0; size: auto; } }
+    body.imprimiendo-catalogo { @page { size: letter; margin: 15mm; } }
+}
+
+/* Tipografías y Maquetación de Etiquetas de Góndola */
+.etiqueta-pro { width: 72mm; margin: 0 auto; text-align: center; font-family: 'Arial Black', sans-serif; }
+.etiqueta-pro img { display: block; margin: 0 auto 10px auto; max-height: 90px; object-fit: contain; }
+.etiqueta-nombre { font-size: 22px; line-height: 1.1; margin: 10px 0; text-transform: uppercase; font-weight: 900; }
+.etiqueta-precio { font-size: 72px; font-weight: 900; letter-spacing: -3px; line-height: 0.85; margin: 5px 0; }
+.etiqueta-footer { font-size: 13px; font-weight: bold; border-top: 3px solid #000; padding-top: 8px; margin-top: 8px; text-transform: uppercase; }
+
+/* Formato Estructural para los Reportes Corporativos (Catálogos) */
+.contenedor-listado { width: 100%; font-family: 'Arial', sans-serif; color: #000; }
+.titulo-listado { text-align: center !important; font-family: 'Arial Black', sans-serif !important; font-size: 24px !important; text-transform: uppercase !important; margin-top: 0 !important; margin-bottom: 5px !important; border-bottom: 4px solid #000 !important; padding-bottom: 5px !important; }
+.listado-columnas { column-count: 2; column-gap: 30px; }
+
+.cat-tabla { width: 100%; border-collapse: collapse; margin-top: 0 !important; margin-bottom: 15px; page-break-inside: auto !important; break-inside: auto !important; }
+.cat-tabla tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+.cat-tabla th { background: #000 !important; color: white !important; padding: 8px; font-size: 13px; text-align: left; text-transform: uppercase; font-weight: bold; border: 1px solid #000 !important; }
+.cat-tabla td { border: 1px solid #ccc !important; padding: 8px; font-size: 13px; font-weight: bold; text-transform: uppercase; color: #000 !important; }
+.cat-precio-destaque { color: #000 !important; font-size: 16px; font-weight: 900; text-align: right; white-space: nowrap; }

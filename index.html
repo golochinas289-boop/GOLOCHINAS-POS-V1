@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golochinas POS - Sistema Administrativo</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app-principal" class="p-4">
+    <div id="header-sistema" class="bg-blue-900 p-4 rounded-t-lg shadow-lg flex flex-wrap justify-between items-center gap-4 no-print">
+        <div class="flex items-center gap-3">
+            <div id="controles-logo" class="relative group">
+                <div onclick="document.getElementById('input-logo').click()" class="h-16 w-48 bg-slate-100 rounded border-2 border-yellow-400 flex items-center justify-center overflow-hidden cursor-pointer shadow-md select-none">
+                    <img id="img-logo" src="" class="h-full w-full object-contain hidden">
+                    <span id="placeholder-logo" class="text-[10px] font-black text-blue-900 text-center p-1 uppercase">🖼️ CARGAR LOGO.PNG</span>
+                </div>
+                <input type="file" id="input-logo" class="hidden" accept="image/*" onchange="window.cargarLogo(event)">
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-white italic uppercase tracking-tighter">Golochinas 289</h1>
+                <div class="flex gap-2 items-center mt-1">
+                    <div id="sync-status" class="text-[9px] bg-yellow-500 text-black px-2 py-0.5 rounded font-black inline-block">⏳ CONECTANDO A LA NUBE...</div>
+                    <div class="bg-green-600 text-white px-2 py-0.5 rounded font-black text-[10px] shadow border border-green-400">💰 INV TOTAL: $<span id="lbl-total-inv">0.00</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 max-w-md relative mx-4">
+            <input type="text" id="buscador" placeholder="🔍 BUSCAR ARTÍCULO O ESCANEAR..." class="w-full bg-white text-blue-900 font-bold placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg shadow-inner text-sm uppercase" oninput="window.filtrarInventario(this.value)">
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            <button onclick="window.cargarInventarioDesdeNube()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black text-[10px] px-3 py-2 rounded shadow uppercase italic">🔄 REFRESCAR NUBE</button>
+            <div class="bg-yellow-500 hover:bg-yellow-400 text-black font-black text-[10px] px-3 py-2 rounded shadow uppercase italic cursor-pointer">
+                <label for="input-sync" class="cursor-pointer">🔄 CARGAR INVENTARIO (XLSX)</label>
+                <input type="file" id="input-sync" accept=".xlsx" class="hidden" onchange="window.sincronizarInventario(event)">
+            </div>
+            <button onclick="window.generarCatDetal()" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] px-3 py-2 rounded shadow uppercase italic">📖 LISTADO DETAL</button>
+            <button onclick="window.generarCatMayor()" class="bg-amber-600 hover:bg-amber-500 text-white font-black text-[10px] px-3 py-2 rounded shadow uppercase italic">📦 LISTADO MAYOR</button>
+            <button onclick="window.descargarInventario()" class="bg-white hover:bg-gray-100 text-blue-900 font-black text-[10px] px-3 py-2 rounded shadow uppercase italic">⬇️ EXPORTAR REVISADO</button>
+            <button onclick="window.limpiarTodoElSistema()" class="bg-red-600 hover:bg-red-500 text-white font-black text-[10px] px-2 py-2 rounded shadow uppercase italic">🗑️ VACIAR DATOS</button>
+        </div>
+    </div>
+
+    <div id="formulario-edicion" class="bg-white p-4 border-x border-blue-900 shadow-md no-print mb-4 grid grid-cols-1 md:grid-cols-4 gap-4 sticky top-0 z-50">
+        <div class="md:col-span-2">
+            <label class="label-form">Nombre del Producto / Descripción Nueva</label>
+            <input type="text" id="form-nombre" class="border-blue-900 uppercase" placeholder="Escribe el nombre del nuevo artículo o selecciona de abajo">
+        </div>
+        <div>
+            <label class="label-form">Unidad de Medida (Venta)</label>
+            <select id="form-unidad" class="border-blue-900 bg-white font-bold p-[6px] rounded border w-full text-xs">
+                <option value="Und.">Und.</option>
+                <option value="Kg.">Kg.</option>
+                <option value="Gr.">Gr.</option>
+                <option value="Lts.">Lts.</option>
+                <option value="Bulto.">Bulto.</option>
+                <option value="Caja.">Caja.</option>
+                <option value="Docena.">Docena.</option>
+                <option value="Ml.">Ml.</option>
+                <option value="Mts.">Mts.</option>
+                <option value="Mts2.">Mts2.</option>
+                <option value="Cm.">Cm.</option>
+                <option value="Cm2.">Cm2.</option>
+                <option value="Cm3.">Cm3.</option>
+            </select>
+        </div>
+        <div>
+            <label class="label-form text-blue-800">Código SKU / Identificador</label>
+            <input type="text" id="form-sku" class="border-blue-900 uppercase" placeholder="SKU-000">
+        </div>
+
+        <div class="md:col-span-4 bg-pink-50 p-3 rounded border border-pink-200 grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div>
+                <label class="label-form text-pink-900">Costo Base Sin IVA ($)</label>
+                <input type="number" id="calc-costo-base" step="0.000001" class="border-pink-300" placeholder="Precio sin IVA" oninput="window.procesarDesgloseAutomatico()">
+            </div>
+            <div>
+                <label class="label-form text-pink-900">Tipo de IVA</label>
+                <select id="calc-iva-tipo" class="border-pink-300 bg-white font-bold p-[6px] rounded border w-full text-xs" onchange="window.procesarDesgloseAutomatico()">
+                    <option value="0">EXENTO (0%)</option>
+                    <option value="0.16">IVA (16%)</option>
+                </select>
+            </div>
+            <div>
+                <label class="label-form text-pink-900">Total Base Con IVA ($)</label>
+                <input type="number" id="calc-costo-total-iva" step="0.01" class="border-pink-300 bg-pink-100 font-mono" readonly placeholder="Total con IVA">
+            </div>
+            <div>
+                <label class="label-form text-pink-900">Cantidad Unidades Internas</label>
+                <input type="number" id="calc-unidades-internas" step="1" value="1" class="border-pink-300" oninput="window.procesarDesgloseAutomatico()">
+            </div>
+            <div>
+                <label class="label-form text-slate-700">Costo Unitario (Resultante)</label>
+                <input type="number" id="form-costo" step="0.000001" class="border-blue-900 bg-gray-50 font-mono" oninput="window.calcularMargenesSugeridos(); window.calcularMargenManual();">
+            </div>
+        </div>
+
+        <div class="bg-purple-50 p-3 rounded border border-purple-200">
+            <label class="label-form text-purple-900">Sugerido Mínimo (Márg. 30%)</label>
+            <div class="text-sm font-black text-purple-900">$<span id="sug-min">0.00</span></div>
+        </div>
+        <div class="bg-purple-50 p-3 rounded border border-purple-200">
+            <label class="label-form text-purple-900">Sugerido Máximo (Márg. 35%)</label>
+            <div class="text-sm font-black text-purple-900">$<span id="sug-max">0.00</span></div>
+        </div>
+
+        <div>
+            <label class="label-form text-blue-900">Precio Venta Detal ($)</label>
+            <input type="number" id="form-pvp" step="0.01" class="border-green-600" placeholder="Vacío por defecto" oninput="window.calcularMargenManual(); window.calcularMargenesSugeridos();">
+        </div>
+        <div>
+            <label class="label-form text-orange-600">Precio Venta Mayor (Auto 5% Redondeado)</label>
+            <input type="number" id="form-pvp-mayor" step="0.01" class="border-orange-500 bg-gray-50 font-black text-orange-700 text-sm" readonly>
+        </div>
+        <div>
+            <label class="label-form text-blue-950">Stock / Cantidad Existente</label>
+            <input type="number" id="form-cantidad" step="1" class="border-blue-950 font-black text-blue-950" placeholder="Ej: 50">
+        </div>
+
+        <div class="md:col-span-1 flex items-center gap-6 bg-slate-50 p-3 rounded border border-blue-200">
+            <label class="flex items-center gap-2 font-black text-xs text-blue-900 cursor-pointer">
+                <input type="checkbox" id="cat-detal" class="w-4 h-4"> INCLUIR EN DETAL
+            </label>
+            <label class="flex items-center gap-2 font-black text-xs text-orange-600 cursor-pointer">
+                <input type="checkbox" id="cat-mayor" class="w-4 h-4"> INCLUIR EN MAYOR
+            </label>
+        </div>
+
+        <div class="md:col-span-3 flex items-end justify-end gap-2">
+            <div class="text-right mr-2">
+                <span class="text-[10px] font-bold text-gray-400 block">MARGEN</span>
+                <span id="lbl-margen-form" class="text-md font-black text-gray-700">0.0%</span>
+            </div>
+            <button onclick="window.limpiarFormularioEdicion()" class="bg-slate-500 hover:bg-slate-600 text-white font-black px-3 py-2 rounded shadow uppercase text-[11px]">✨ Limpiar Form</button>
+            <button onclick="window.guardarCambiosProducto(false)" class="bg-blue-800 hover:bg-blue-700 text-white font-black px-4 py-2 rounded shadow uppercase text-[11px]">💾 Guardar en Nube</button>
+            <button onclick="window.accionGuardarYImprimir()" class="bg-green-700 hover:bg-green-600 text-white font-black px-4 py-2 rounded shadow uppercase text-[11px]">💾 Guardar e Imprimir</button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto bg-white p-2 border-x border-b border-blue-900 rounded-b-lg shadow-2xl no-print">
+        <table class="w-full text-left" id="tabla-inventario">
+            <thead>
+                <tr>
+                    <th class="p-2">Nombre del Artículo / Presentación</th>
+                    <th class="p-2 text-center">SKU</th>
+                    <th class="p-2 text-right">Stock</th>
+                    <th class="p-2 text-right">Costo unitario ($)</th>
+                    <th class="p-2 text-right">Precio Detal ($)</th>
+                    <th class="p-2 text-right">Precio Mayor ($)</th>
+                    <th class="p-2 text-center">Márg. Detal</th>
+                    <th class="p-2 text-center">Catálogos</th>
+                    <th class="p-2 text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo-tabla">
+                <tr>
+                    <td colspan="9" class="text-center p-8 text-gray-400 font-bold uppercase tracking-wider">
+                        ⏳ Sincronizando base de datos en la nube de Golochinas...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="area-impresion"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
