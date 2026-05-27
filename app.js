@@ -217,12 +217,14 @@ window.guardarCambiosProducto = async function(imprimir = false) {
     const { data, error } = await window.sbClient.from('productos').upsert([payload]).select();
     
     if(!error) {
+        // CORRECCIÓN DE ORDEN: Primero forzamos la descarga de datos para registrar el nuevo ID en memoria local
+        await window.cargarInventarioDesdeNube();
+        
         if (imprimir && data && data.length > 0) {
             window.imprimirEtiquetaUnica(data[0].id);
         } else {
             alert("✅ Guardado exitosamente en la nube.");
         }
-        await window.cargarInventarioDesdeNube();
         window.limpiarFormularioEdicion();
     } else {
         alert("❌ Error al guardar datos: " + error.message);
