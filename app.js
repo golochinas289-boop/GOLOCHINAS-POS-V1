@@ -1,5 +1,5 @@
-// REGLA 2: Inyección e incrustación directa de credenciales para máxima independencia operativa
-const sbUrl = 'https://gojnsrpxdbywixatmntc.supabase.co';
+// CONFIGURACIÓN OFICIAL Y EMBEBIDA CON TUS CREDENCIALES REALES
+const sbUrl = 'https://gojnsrpxdbywixatmntc.supabase.co'; 
 const sbKey = 'sb_publishable_85Lv8ASFg0qXIVTipNdnbA_fwbH-lq_'; 
 
 window.sbClient = null;
@@ -13,12 +13,7 @@ function inicializarSupabase() {
     const supabaseLib = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
     if (supabaseLib) {
         try {
-            // Conexión forzada e inmediata usando los parámetros embebidos
             window.sbClient = supabaseLib.createClient(sbUrl, sbKey);
-            
-            const img = document.getElementById('img-logo');
-            if (img) { img.src = urlLogoPredeterminado; }
-            
             window.cargarInventarioDesdeNube();
             configurarBuscadorInteligente();
         } catch (err) {
@@ -30,10 +25,7 @@ function inicializarSupabase() {
     }
 }
 
-window.addEventListener('load', inicializarSupabase);
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    inicializarSupabase();
-}
+window.addEventListener('DOMContentLoaded', inicializarSupabase);
 
 function modificarEstadoConexion(texto, claseFondo) {
     const badge = document.getElementById('sync-status');
@@ -371,7 +363,7 @@ window.eliminarProductoReal = async function(id) {
 window.eliminarTodoSupabaseOpcion = async function(silencioso = false) {
     if (!window.sbClient) return false;
     if (!silencioso) {
-        if (!confirm("⚠️ ¡ADVERTENCIA TRIBUTARIA Y DE CONTABILIDAD!\n\n¿Estás completamente seguro de borrar TODO el inventario de la nube? Esto no se puede deshacer.")) return false;
+        if (!confirm("⚠️ ¿Estás seguro de borrar TODO el inventario de la nube? Esto no se puede deshacer.")) return false;
     }
     const { error } = await window.sbClient.from('productos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     if (error && !silencioso) alert("Error al vaciar nube: " + error.message);
