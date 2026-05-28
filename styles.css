@@ -40,6 +40,34 @@ input[type="text"], input[type="number"], select {
 #cuerpo-tabla tr:nth-child(even) { background-color: #f8fafc; }
 #cuerpo-tabla tr:hover { background-color: #eff6ff; cursor: pointer; }
 
+/* NUEVO: Estilos estilizados para el menú de sugerencias predictivo de Golochinas */
+.suggestions-list {
+    border: 2px solid #1e40af;
+    border-radius: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    background: white;
+    position: absolute;
+    width: 100%;
+    left: 0;
+    top: 105%;
+    z-index: 150;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    display: none;
+}
+.suggestion-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    color: #1e3a8a;
+    text-align: left;
+    text-transform: uppercase;
+}
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:hover { background-color: #eff6ff; color: #1d4ed8; }
+
 .price-box { display: inline-block; padding: 2px 5px; border-radius: 4px; font-size: 10px; margin: 1px; font-weight: 900; }
 .box-detal { background-color: #e2e8f0; color: #1e3a8a; }
 .box-mayor { background-color: #fef3c7; color: #d97706; }
@@ -64,14 +92,14 @@ body.imprimiendo-etiqueta #area-impresion { max-width: 76mm !important; margin: 
     body.imprimiendo-catalogo { @page { size: letter; margin: 15mm; } }
 }
 
-/* Tipografías y Maquetación de Etiquetas de Góndola */
+/* Tipografías de Etiquetas */
 .etiqueta-pro { width: 72mm; margin: 0 auto; text-align: center; font-family: 'Arial Black', sans-serif; }
 .etiqueta-pro img { display: block; margin: 0 auto 10px auto; max-height: 90px; object-fit: contain; }
 .etiqueta-nombre { font-size: 22px; line-height: 1.1; margin: 10px 0; text-transform: uppercase; font-weight: 900; }
 .etiqueta-precio { font-size: 72px; font-weight: 900; letter-spacing: -3px; line-height: 0.85; margin: 5px 0; }
 .etiqueta-footer { font-size: 13px; font-weight: bold; border-top: 3px solid #000; padding-top: 8px; margin-top: 8px; text-transform: uppercase; }
 
-/* Formato Estructural para los Reportes Corporativos (Catálogos) */
+/* Formato Estructural para Catálogos */
 .contenedor-listado { width: 100%; font-family: 'Arial', sans-serif; color: #000; }
 .titulo-listado { text-align: center !important; font-family: 'Arial Black', sans-serif !important; font-size: 24px !important; text-transform: uppercase !important; margin-top: 0 !important; margin-bottom: 5px !important; border-bottom: 4px solid #000 !important; padding-bottom: 5px !important; }
 .listado-columnas { column-count: 2; column-gap: 30px; }

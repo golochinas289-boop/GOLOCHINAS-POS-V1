@@ -12,12 +12,10 @@
 <div id="app-principal" class="p-4">
     <div id="header-sistema" class="bg-blue-900 p-4 rounded-t-lg shadow-lg flex flex-wrap justify-between items-center gap-4 no-print">
         <div class="flex items-center gap-3">
-            <div id="controles-logo" class="relative group">
-                <div onclick="document.getElementById('input-logo').click()" class="h-16 w-48 bg-slate-100 rounded border-2 border-yellow-400 flex items-center justify-center overflow-hidden cursor-pointer shadow-md select-none">
-                    <img id="img-logo" src="" class="h-full w-full object-contain hidden">
-                    <span id="placeholder-logo" class="text-[10px] font-black text-blue-900 text-center p-1 uppercase">🖼️ CARGAR LOGO.PNG</span>
+            <div id="controles-logo">
+                <div class="h-16 w-48 bg-white rounded border-2 border-yellow-400 flex items-center justify-center overflow-hidden shadow-md select-none">
+                    <img id="img-logo" src="https://gojnsrpxdbywixatmntc.supabase.co/storage/v1/object/public/logos/golochinas_logo.png" class="h-full w-full object-contain">
                 </div>
-                <input type="file" id="input-logo" class="hidden" accept="image/*" onchange="window.cargarLogo(event)">
             </div>
             <div>
                 <h1 class="text-xl font-black text-white italic uppercase tracking-tighter">Golochinas 289</h1>
@@ -29,19 +27,21 @@
         </div>
 
         <div class="flex-1 max-w-md relative mx-4">
-            <input type="text" id="buscador" placeholder="🔍 BUSCAR ARTÍCULO O ESCANEAR..." class="w-full bg-white text-blue-900 font-bold placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg shadow-inner text-sm uppercase" oninput="window.filtrarInventario(this.value)">
+            <input type="text" id="buscador" placeholder="🔍 BUSCAR ARTÍCULO O ESCANEAR..." class="w-full bg-white text-blue-900 font-bold placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg shadow-inner text-sm uppercase" autocomplete="off">
+            <div id="suggestions-list" class="suggestions-list"></div>
         </div>
 
         <div class="flex flex-wrap gap-2">
             <button onclick="window.cargarInventarioDesdeNube()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black text-[10px] px-3 py-2 rounded shadow uppercase italic">🔄 REFRESCAR NUBE</button>
+            <button onclick="window.sincronizarDesdeGoogleSheets()" class="bg-green-600 hover:bg-green-500 text-white font-black text-[10px] px-3 py-2 rounded shadow uppercase italic">🟢 SINC GOOGLE SHEETS</button>
             <div class="bg-yellow-500 hover:bg-yellow-400 text-black font-black text-[10px] px-3 py-2 rounded shadow uppercase italic cursor-pointer">
-                <label for="input-sync" class="cursor-pointer">🔄 CARGAR INVENTARIO (XLSX)</label>
+                <label for="input-sync" class="cursor-pointer">🔄 CARGAR LOCAL (XLSX)</label>
                 <input type="file" id="input-sync" accept=".xlsx" class="hidden" onchange="window.sincronizarInventario(event)">
             </div>
             <button onclick="window.generarCatDetal()" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] px-3 py-2 rounded shadow uppercase italic">📖 LISTADO DETAL</button>
             <button onclick="window.generarCatMayor()" class="bg-amber-600 hover:bg-amber-500 text-white font-black text-[10px] px-3 py-2 rounded shadow uppercase italic">📦 LISTADO MAYOR</button>
             <button onclick="window.descargarInventario()" class="bg-white hover:bg-gray-100 text-blue-900 font-black text-[10px] px-3 py-2 rounded shadow uppercase italic">⬇️ EXPORTAR REVISADO</button>
-            <button onclick="window.limpiarTodoElSistema()" class="bg-red-600 hover:bg-red-500 text-white font-black text-[10px] px-2 py-2 rounded shadow uppercase italic">🗑️ VACIAR DATOS</button>
+            <button onclick="window.eliminarTodoSupabaseOpcion()" class="bg-red-600 hover:bg-red-500 text-white font-black text-[10px] px-2 py-2 rounded shadow uppercase italic">🗑️ VACIAR NUBE DEL TODO</button>
         </div>
     </div>
 
@@ -54,23 +54,27 @@
             <label class="label-form">Unidad de Medida (Venta)</label>
             <select id="form-unidad" class="border-blue-900 bg-white font-bold p-[6px] rounded border w-full text-xs">
                 <option value="Und.">Und.</option>
+                <option value="Caja.">Caja.</option>
+                <option value="Bulto.">Bulto.</option>
                 <option value="Kg.">Kg.</option>
                 <option value="Gr.">Gr.</option>
                 <option value="Lts.">Lts.</option>
-                <option value="Bulto.">Bulto.</option>
-                <option value="Caja.">Caja.</option>
                 <option value="Docena.">Docena.</option>
-                <option value="Ml.">Ml.</option>
-                <option value="Mts.">Mts.</option>
-                <option value="Mts2.">Mts2.</option>
-                <option value="Cm.">Cm.</option>
-                <option value="Cm2.">Cm2.</option>
-                <option value="Cm3.">Cm3.</option>
             </select>
         </div>
+        
         <div>
-            <label class="label-form text-blue-800">Código SKU / Identificador</label>
-            <input type="text" id="form-sku" class="border-blue-900 uppercase" placeholder="SKU-000">
+            <label class="label-form text-blue-800">Código SKU / Identificador (Barras)</label>
+            <div class="flex gap-1">
+                <input type="text" id="form-sku" class="border-blue-900 uppercase" placeholder="SKU-000">
+                <button type="button" id="start-scan-btn" onclick="window.activarEscanerCamara()" class="bg-blue-900 text-white px-2 rounded hover:bg-blue-800 font-bold text-xs shadow">📷 Cam</button>
+                <button type="button" id="stop-scan-btn" onclick="window.detenerEscanerCamara()" class="bg-red-600 text-white px-2 rounded hover:bg-red-500 font-bold text-xs shadow hidden">❌ X</button>
+            </div>
+        </div>
+
+        <div id="contenedor-lector-camara" class="md:col-span-4 w-full flex flex-col items-center justify-center bg-gray-100 p-2 rounded border border-dashed border-gray-400 hidden">
+            <div id="reader" class="w-full max-w-xs md:max-w-md overflow-hidden rounded bg-white shadow-inner"></div>
+            <p class="text-[11px] font-bold text-blue-900 mt-1 uppercase tracking-tight">Apunta el código de barras hacia el recuadro</p>
         </div>
 
         <div class="md:col-span-4 bg-pink-50 p-3 rounded border border-pink-200 grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -145,7 +149,7 @@
         <table class="w-full text-left" id="tabla-inventario">
             <thead>
                 <tr>
-                    <th class="p-2">Nombre del Artículo / Presentation</th>
+                    <th class="p-2">Nombre del Artículo / Presentación</th>
                     <th class="p-2 text-center">SKU</th>
                     <th class="p-2 text-right">Stock</th>
                     <th class="p-2 text-right">Costo unitario ($)</th>
@@ -171,6 +175,7 @@
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script src="app.js"></script>
 </body>
 </html>

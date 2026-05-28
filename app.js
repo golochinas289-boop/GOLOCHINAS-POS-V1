@@ -1,25 +1,26 @@
-// REGLA 2: Ocultación de llaves del código principal (Lee variables de entorno o globales de desarrollo)
-const sbUrl = window.SB_URL || 'https://gojnsrpxdbywixatmntc.supabase.co';
-const sbKey = window.SB_KEY || 'sb_publishable_85Lv8ASFg0qXIVTipNdnbA_fwbH-lq_'; 
+// REGLA 2: Inyección e incrustación directa de credenciales para máxima independencia operativa
+const sbUrl = 'https://gojnsrpxdbywixatmntc.supabase.co';
+const sbKey = 'sb_publishable_85Lv8ASFg0qXIVTipNdnbA_fwbH-lq_'; 
 
 window.sbClient = null;
 window.productos = [];
 window.indexSeleccionado = null;
-var logoBase64 = localStorage.getItem('golochinas_logo') || '';
+window.html5QrcodeScanner = null;
+
+const urlLogoPredeterminado = "https://gojnsrpxdbywixatmntc.supabase.co/storage/v1/object/public/logos/golochinas_logo.png";
 
 function inicializarSupabase() {
     const supabaseLib = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
     if (supabaseLib) {
         try {
+            // Conexión forzada e inmediata usando los parámetros embebidos
             window.sbClient = supabaseLib.createClient(sbUrl, sbKey);
             
-            if (logoBase64) {
-                const img = document.getElementById('img-logo');
-                if(img) { img.src = logoBase64; img.classList.remove('hidden'); }
-                const ph = document.getElementById('placeholder-logo');
-                if(ph) ph.classList.add('hidden');
-            }
+            const img = document.getElementById('img-logo');
+            if (img) { img.src = urlLogoPredeterminado; }
+            
             window.cargarInventarioDesdeNube();
+            configurarBuscadorInteligente();
         } catch (err) {
             console.error(err);
             modificarEstadoConexion("❌ ERR_INIT", "bg-red-600");
@@ -41,22 +42,6 @@ function modificarEstadoConexion(texto, claseFondo) {
         badge.className = `text-[9px] ${claseFondo} text-white px-2 py-0.5 rounded font-black inline-block`;
     }
 }
-
-window.cargarLogo = function(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            logoBase64 = e.target.result;
-            localStorage.setItem('golochinas_logo', logoBase64);
-            const img = document.getElementById('img-logo');
-            if (img) { img.src = logoBase64; img.classList.remove('hidden'); }
-            const ph = document.getElementById('placeholder-logo');
-            if (ph) ph.classList.add('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
-};
 
 window.cargarInventarioDesdeNube = async function() {
     if (!window.sbClient) return;
@@ -86,11 +71,55 @@ window.cargarInventarioDesdeNube = async function() {
     }
 };
 
-window.filtrarInventario = function(valor) {
-    const q = valor.toUpperCase();
-    const filtrados = window.productos.filter(p => p.Nombre.includes(q) || p.SKU.includes(q));
-    renderizarTabla(filtrados);
-};
+function configurarBuscadorInteligente() {
+    const buscador = document.getElementById('buscador');
+    const listaSugerencias = document.getElementById('suggestions-list');
+    if (!buscador || !listaSugerencias) return;
+
+    buscador.addEventListener('input', (e) => {
+        const q = e.target.value.toUpperCase().trim();
+        listaSugerencias.innerHTML = '';
+
+        if (q === '') {
+            listaSugerencias.style.display = 'none';
+            window.renderizarTabla(window.productos);
+            return;
+        }
+
+        const coincidenciaExactaSKU = window.productos.find(p => p.SKU === q);
+        if (coincidenciaExactaSKU) {
+            window.seleccionarProductoReal(coincidenciaExactaSKU.id);
+            buscador.value = '';
+            listaSugerencias.style.display = 'none';
+            return;
+        }
+
+        const filtrados = window.productos.filter(p => p.Nombre.includes(q) || p.SKU.includes(q));
+        
+        if (filtrados.length > 0) {
+            filtrados.slice(0, 10).forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerText = `${p.Nombre} [${p.SKU || 'SIN SKU'}]`;
+                div.addEventListener('click', () => {
+                    window.seleccionarProductoReal(p.id);
+                    buscador.value = '';
+                    listaSugerencias.style.display = 'none';
+                });
+                listaSugerencias.appendChild(div);
+            });
+            listaSugerencias.style.display = 'block';
+        } else {
+            listaSugerencias.style.display = 'none';
+        }
+
+        window.renderizarTabla(filtrados);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target !== buscador) listaSugerencias.style.display = 'none';
+    });
+}
 
 function redondearMayorArriba(pvp) { return Math.ceil((pvp * 0.95) * 100) / 100; }
 
@@ -146,7 +175,7 @@ function renderizarTabla(lista) {
         return;
     }
 
-    lista.forEach((p, idx) => {
+    lista.forEach((p) => {
         totalInv += (p['Costo unitario'] * p.Cantidad);
         const m = p['Precio de venta'] > 0 ? (((p['Precio de venta'] - p['Costo unitario']) / p['Precio de venta']) * 100).toFixed(1) : 0;
         const clMargen = m < 15 ? 'margen-alerta' : 'margen-excelente';
@@ -191,17 +220,52 @@ window.seleccionarProductoReal = function(id) {
     
     window.calcularMargenManual();
     window.calcularMargenesSugeridos();
+    document.getElementById('formulario-edicion').scrollIntoView({ behavior: 'smooth' });
+};
+
+window.activarEscanerCamara = function() {
+    document.getElementById('contenedor-lector-camara').classList.remove('hidden');
+    document.getElementById('start-scan-btn').classList.add('hidden');
+    document.getElementById('stop-scan-btn').classList.remove('hidden');
+
+    window.html5QrcodeScanner = new Html5Qrcode("reader");
+    window.html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 15, qrbox: { width: 280, height: 160 } },
+        (decodedText) => {
+            const codigo = String(decodedText).trim().toUpperCase();
+            document.getElementById('form-sku').value = codigo;
+            const existente = window.productos.find(p => p.SKU === codigo);
+            if(existente) { window.seleccionarProductoReal(existente.id); }
+            window.detenerEscanerCamara();
+        },
+        () => {}
+    ).catch(() => {
+        alert("No se pudo iniciar la cámara.");
+        window.detenerEscanerCamara();
+    });
+};
+
+window.detenerEscanerCamara = function() {
+    if (window.html5QrcodeScanner) {
+        window.html5QrcodeScanner.stop().then(() => {
+            window.html5QrcodeScanner = null;
+            document.getElementById('contenedor-lector-camara').classList.add('hidden');
+            document.getElementById('start-scan-btn').classList.remove('hidden');
+            document.getElementById('stop-scan-btn').classList.add('hidden');
+        }).catch(() => {});
+    }
 };
 
 window.guardarCambiosProducto = async function(imprimir = false) {
     if (!window.sbClient) return;
     
-    const nombre = document.getElementById('form-nombre').value.toUpperCase();
+    const nombre = document.getElementById('form-nombre').value.toUpperCase().trim();
     if(!nombre) { alert("Por favor, introduce el Nombre del Producto."); return; }
 
     const payload = {
         descripcion: nombre,
-        codigo_barra: document.getElementById('form-sku').value.toUpperCase(),
+        codigo_barra: document.getElementById('form-sku').value.toUpperCase().trim(),
         stock: parseInt(document.getElementById('form-cantidad').value) || 0,
         c_und: parseFloat(document.getElementById('form-costo').value) || 0,
         pvp_und: parseFloat(document.getElementById('form-pvp').value) || 0,
@@ -217,9 +281,7 @@ window.guardarCambiosProducto = async function(imprimir = false) {
     const { data, error } = await window.sbClient.from('productos').upsert([payload]).select();
     
     if(!error) {
-        // CORRECCIÓN DE ORDEN: Primero forzamos la descarga de datos para registrar el nuevo ID en memoria local
         await window.cargarInventarioDesdeNube();
-        
         if (imprimir && data && data.length > 0) {
             window.imprimirEtiquetaUnica(data[0].id);
         } else {
@@ -248,7 +310,7 @@ window.imprimirEtiquetaUnica = function(id) {
     
     area.innerHTML = `
         <div class="etiqueta-pro">
-            ${logoBase64 ? `<img src="${logoBase64}">` : ''}
+            <img src="${urlLogoPredeterminado}" style="display:block; margin:0 auto 10px auto; max-height:90px; object-fit:contain;">
             <div class="etiqueta-nombre">${p.Nombre}</div>
             <div class="etiqueta-precio">$${p['Precio de venta'].toFixed(2)}</div>
             <div style="font-size: 14px; font-weight: 900; margin-top: -2px; margin-bottom: 2px; text-transform: uppercase;">CALCULADO A BCV</div>
@@ -306,11 +368,80 @@ window.eliminarProductoReal = async function(id) {
     }
 };
 
+window.eliminarTodoSupabaseOpcion = async function(silencioso = false) {
+    if (!window.sbClient) return false;
+    if (!silencioso) {
+        if (!confirm("⚠️ ¡ADVERTENCIA TRIBUTARIA Y DE CONTABILIDAD!\n\n¿Estás completamente seguro de borrar TODO el inventario de la nube? Esto no se puede deshacer.")) return false;
+    }
+    const { error } = await window.sbClient.from('productos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error && !silencioso) alert("Error al vaciar nube: " + error.message);
+    return !error;
+};
+
 window.limpiarTodoElSistema = () => { if(confirm("¿Limpiar vista de datos local?")) { window.productos = []; renderizarTabla([]); } };
+
+window.sincronizarDesdeGoogleSheets = async function() {
+    if (!window.sbClient) return;
+    let url = localStorage.getItem('golochinas_sheets_url');
+    if (url) {
+        const cambiarEnlace = confirm("¿Usar el Google Sheet guardado anteriormente?\n\n(Cancelar si deseas registrar uno nuevo)");
+        if (!cambiarEnlace) url = null;
+    }
+    if (!url) {
+        url = prompt("Introduce el enlace largo de Google Sheet publicado como CSV:");
+        if (!url) return;
+        localStorage.setItem('golochinas_sheets_url', url);
+    }
+    
+    modificarEstadoConexion("⏳ LEYENDO GOOGLE SHEETS...", "bg-yellow-500");
+    try {
+        const respuesta = await fetch(url);
+        if (!respuesta.ok) throw new Error();
+        const csvTexto = await respuesta.text();
+        
+        const workbook = XLSX.read(csvTexto, {type: 'string'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet);
+        
+        const loteProductos = json.map(item => ({
+            descripcion: String(item.Nombre || '').trim().toUpperCase(),
+            codigo_barra: item.SKU ? String(item.SKU).trim().toUpperCase() : null,
+            stock: parseInt(item.Stock) || 0,
+            c_und: parseFloat(item.Costo) || 0,
+            pvp_und: parseFloat(item.PVP) || 0,
+            cu_d: item.EsDetal ? (String(item.EsDetal).toLowerCase() === 'si') : true,
+            cu_m: item.EsMayor ? (String(item.EsMayor).toLowerCase() === 'si') : false
+        })).filter(p => p.descripcion !== "");
+
+        if (loteProductos.length === 0) {
+            alert("⚠️ Archivo vacío.");
+            window.cargarInventarioDesdeNube();
+            return;
+        }
+
+        modificarEstadoConexion("⏳ REEMPLAZANDO NUBE...", "bg-yellow-500");
+        
+        const exitoVaciar = await window.eliminarTodoSupabaseOpcion(true);
+        if (!exitoVaciar) {
+            alert("❌ Error de seguridad al limpiar la base de datos previa.");
+            window.cargarInventarioDesdeNube();
+            return;
+        }
+
+        const { error } = await window.sbClient.from('productos').insert(loteProductos);
+        if (!error) alert(`🎉 ¡Sincronización Perfecta! Tu nube tiene exactamente los ${loteProductos.length} productos de Google Sheets.`);
+        else alert("❌ Error al insertar: " + error.message);
+        await window.cargarInventarioDesdeNube();
+    } catch (err) {
+        alert("❌ Error de lectura.");
+        window.cargarInventarioDesdeNube();
+    }
+};
 
 window.sincronizarInventario = function(event) {
     const file = event.target.files[0];
     if (!file || !window.sbClient) return;
+    modificarEstadoConexion("⏳ PROCESANDO EXCEL...", "bg-yellow-500");
     const reader = new FileReader();
     reader.onload = async (e) => {
         try {
@@ -318,20 +449,27 @@ window.sincronizarInventario = function(event) {
             const workbook = XLSX.read(data, {type: 'array'});
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
             const json = XLSX.utils.sheet_to_json(sheet);
-            for (let item of json) {
-                await window.sbClient.from('productos').insert([{
-                    descripcion: item.Nombre,
-                    codigo_barra: item.SKU,
-                    stock: item.Stock,
-                    c_und: item.Costo,
-                    pvp_und: item.PVP,
-                    cu_d: item.EsDetal === 'si',
-                    cu_m: item.EsMayor === 'si'
-                }]);
-            }
-            alert("✅ Inventario cargado con éxito");
+            
+            const loteProductos = json.map(item => ({
+                descripcion: String(item.Nombre || '').trim().toUpperCase(),
+                codigo_barra: item.SKU ? String(item.SKU).trim().toUpperCase() : null,
+                stock: parseInt(item.Stock) || 0,
+                c_und: parseFloat(item.Costo) || 0,
+                pvp_und: parseFloat(item.PVP) || 0,
+                cu_d: item.EsDetal ? (String(item.EsDetal).toLowerCase() === 'si') : true,
+                cu_m: item.EsMayor ? (String(item.EsMayor).toLowerCase() === 'si') : false
+            })).filter(p => p.descripcion !== "");
+
+            await window.eliminarTodoSupabaseOpcion(true);
+
+            const { error } = await window.sbClient.from('productos').insert(loteProductos);
+            if (!error) alert(`🎉 ¡Excel Cargado! Se reemplazó la nube con tus ${loteProductos.length} artículos nuevos.`);
+            else alert("❌ Error: " + error.message);
+            await window.cargarInventarioDesdeNube();
+        } catch (err) { 
+            alert("❌ Error crítico.");
             window.cargarInventarioDesdeNube();
-        } catch (err) { alert("Error al procesar el archivo Excel."); }
+        }
     };
     reader.readAsArrayBuffer(file);
 };
